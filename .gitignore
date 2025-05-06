@@ -6,3 +6,6 @@ neural_network/test
 
 frontend/node_modules
 frontend/build
+
+backend/__pycache__
+backend/uploads
