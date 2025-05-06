@@ -1,84 +1,71 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback } from "react";
 import { useDropzone } from "react-dropzone";
 import { StyledDropzone } from "./components";
+import { useDetectPlate } from "./hooks";
 
 export default function App() {
-  const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<{
-    ocr: string[];
-    highlighted: string;
-    cropped: string[];
-  } | null>(null);
-
-  useEffect(() => {
-    if (!file) return;
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    fetch("http://127.0.0.1:8000/detect", {
-      method: "POST",
-      body: formData,
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setResult(data);
-      });
-  }, [file]);
+  const { mutate, data: result } = useDetectPlate();
 
   // Handle dropped files
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFile(acceptedFiles[0]);
-  }, []);
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles.length > 0) {
+        mutate(acceptedFiles[0]);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
 
   // Initialize the dropzone hook
   const dropzoneState = useDropzone({
     accept: {
-      "image/jpeg": [".jpeg", ".jpg"],
+      "image/*": [".jpg", ".jpeg", ".png"],
     },
     maxFiles: 1,
-    onDrop,
     multiple: false,
+    onDrop,
   });
 
   return (
-    <div className="flex flex-col items-center gap-8 mt-8 h-screen">
+    <div className="flex flex-col items-center gap-4 mt-8 h-screen">
       <h1 className="text-4xl font-bold">License Plate Detector</h1>
 
       <StyledDropzone {...dropzoneState} />
 
-      <pre>
-        {result && (
-          <div className="flex flex-col gap-4 items-center">
-            <img
-              src={`data:image/jpeg;base64,${result.highlighted}`}
-              alt="Highlighted"
-              className="w-[480px]"
-            />
-            <div className="flex w-full gap-4">
-              <div className="grid gap-4 grid-cols-2">
-                {result.cropped.map((item, index) => (
-                  <img
-                    key={index}
-                    src={`data:image/jpeg;base64,${item}`}
-                    alt="Cropped Plate"
-                    className="col-span-1 col-start-1 w-full"
-                  />
-                ))}
-                {result.ocr.map((item, index) => (
-                  <div
-                    key={index}
-                    className="col-span-1 col-start-2 bg-white border-2 rounded-lg flex overflow-hidden items-center"
-                  >
-                    <div className="h-full w-6 bg-blue-500"></div>
-                    <p className="text-center flex-1 text-5xl">{item}</p>
-                  </div>
-                ))}
-              </div>
+      {result && (
+        <div className="flex flex-col items-center gap-4 w-[480px]">
+          <img
+            src={`data:image/jpeg;base64,${result.highlighted}`}
+            alt="Highlighted"
+            className="w-full"
+          />
+          {result.length ? (
+            <div className="grid gap-4 grid-cols-2 place-items-center w-full">
+              {Array.from({ length: result.length }).map((_, index) => {
+                const img = result.cropped[index];
+                const ocr = result.ocr[index];
+
+                return (
+                  <Fragment key={index}>
+                    <img
+                      src={`data:image/jpeg;base64,${img}`}
+                      alt="Cropped Plate"
+                      className="h-[60px]"
+                    />
+                    <div className="h-[60px] w-full bg-white border-2 rounded-lg flex overflow-hidden items-center">
+                      <div className="h-full w-6 bg-blue-500"></div>
+                      <p className="text-center flex-1 text-5xl">{ocr}</p>
+                    </div>
+                  </Fragment>
+                );
+              })}
             </div>
-          </div>
-        )}
-      </pre>
+          ) : (
+            <p className="text-2xl">No license plate detected</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }
