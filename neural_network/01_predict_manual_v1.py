@@ -7,7 +7,7 @@ def main():
         source='datasets/original',
         save_txt=True,
         project='datasets',
-        name='auto_predictions_v1',
+        name='02_auto_predictions_v1',
         device='mps',
         conf=0.5,
         imgsz=512,

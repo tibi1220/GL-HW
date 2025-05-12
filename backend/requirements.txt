@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+ultralytics
+fast_plate_ocr
+pillow
+numpy
+opencv-python

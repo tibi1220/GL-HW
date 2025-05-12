@@ -1,12 +1,10 @@
 from ultralytics import YOLO
 
 def main():
-    # Load the YOLOv8 model
     model = YOLO('yolov8n.pt')
 
-    # Train!
     model.train(
-        data='datasets/data_manual.yaml',  # path to your data config
+        data='datasets/data_manual.yaml',
         epochs=100,
         imgsz=512,
         batch=32,

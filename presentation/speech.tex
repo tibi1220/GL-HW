@@ -1,0 +1,132 @@
+\documentclass[12pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage[magyar]{babel}
+\usepackage{enumitem}
+\usepackage{parskip}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{.66em}
+
+\begin{document}
+
+\section*{Célkitűzések}
+
+A mai bemutatónk témája a gépi látás házi feladatunk, amelynek keretében magyar rendszámokat kellett automatikusan felismerni és kiolvasni.
+A projekt célja tehát kettős volt:
+\begin{itemize}[noitemsep]
+	\item Detektálni az autók rendszámtábláját a képeken,
+	\item Majd kiolvasni a rajtuk lévő karaktereket.
+\end{itemize}
+
+Ehhez egy közel 1400 képből álló adatbázis állt rendelkezésünkre, valamint egy .csv fájl, amely tartalmazta az egyes képekhez tartozó rendszámokat.
+
+>>> NEXT SLIDE >>>
+
+\section*{Projekt felépítése}
+
+A projekt két fő részből áll:
+
+\begin{itemize}[noitemsep]
+	\item YOLOv8 modell segítségével detektáltuk a rendszámtáblákat a képeken.
+	      \begin{itemize}
+		      \item Rövidítés: You Only Look Once, azaz csak egyszer néz rá a képre.
+		      \item A YOLOv8 egy mélytanulás alapú objektumdetektáló modell, amelyet a
+		            képek gyors és pontos feldolgozására terveztek.
+		      \item A YOLOv8 modell képes a képeken található objektumokat, például
+		            autókat és rendszámtáblákat azonosítani.
+	      \end{itemize}
+	\item A detektált táblákból kivágott képeken OCR-t, pontosabban a \texttt{fast-plate-ocr} modellt használtuk a karakterek kiolvasásához.
+\end{itemize}
+
+A kész rendszert kétféleképpen lehet használni:
+\begin{itemize}[noitemsep]
+	\item Parancssoros módon, ahol egy teljes mappát lehet feldolgozni,
+	\item Webes felületen keresztül, ahol a felhasználó egyesével tölthet fel képeket.
+\end{itemize}
+
+>>> NEXT SLIDE >>>
+
+\section*{Képek kézi annotálása}
+
+A munka első lépéseként a képek egy részét (kb 100 darabot) kézzel kellett annotálni – bejelölni, hogy hol található a rendszámtábla a képen.
+Ez időigényes folyamat volt, de szükséges volt egy kezdeti tanítóadatbázis elkészítéséhez.
+Az annotációt a YOLOv8 által használt formátumban kellett elmenteni, ami egy egyszerű szöveges fájl, amely tartalmazza a képen található objektumok helyét és típusát.
+
+>>> NEXT SLIDE >>>
+
+\section*{YOLO tanítása annotált képekkel}
+
+A kézi annotáció után elindítottuk a YOLOv8 betanítását.
+A tanításhoz augmentációt alkalmaztunk, beállítottuk a tanulási rátát, súlycsökkentést, és más hiperparamétereket is.
+
+\begin{itemize}[noitemsep]
+	\item Augmentáció: a képek véletlenszerű elforgatása, tükrözése, méretezése és színkorrekciója.
+	\item Tanulási ráta: a tanulás sebessége, amely befolyásolja, hogy a modell mennyire gyorsan tanulja meg a mintákat.
+	\item Súlycsökkentés: a modell súlyainak csökkentése a túltanulás elkerülése érdekében.
+	\item hiperparaméterek: a modell teljesítményét befolyásoló paraméterek, amelyeket a tanítás előtt kell beállítani.
+	\item Batch size: a tanítás során egyszerre feldolgozott képek száma.
+	\item Epoch: a tanítási ciklusok száma, amely alatt a modell többször is látja az összes képet.
+\end{itemize}
+
+>>> NEXT SLIDE >>>
+
+\section*{Automatikus annotálás}
+
+Miután elkészült a kezdeti YOLO modell, már képesek voltunk a többi, még nem annotált képet automatikusan feldolgozni.
+A detekciós küszöböt 0.5-re állítottuk, hogy kiszűrjük a gyengébb találatokat.
+Ezzel jelentős időt spóroltunk az annotálás során.
+
+>>> NEXT SLIDE >>>
+
+\section*{Annotációk ellenőrzése}
+
+Az automatikus annotálás nem tökéletes, ezért kézzel átnéztük a generált jelöléseket.
+Például volt, amikor a modell nem jelölt meg semmit, vagy rossz helyre rajzolt keretet.
+Ezeket manuálisan javítottuk.
+
+>>> NEXT SLIDE >>>
+
+\section*{Végső tanítás}
+
+Miután elkészült a teljes, ellenőrzött annotációs állomány, újra betanítottuk a modellt.
+Ez adta a legjobb pontosságot, így már megbízhatóan detektálta a rendszámtáblákat.
+A felhasznált paraméterek az első tanítással megegyezőek voltak.
+
+>>> NEXT SLIDE >>>
+
+\section*{OCR működése}
+
+Ezután következett az OCR modell. A fast-plate-ocr kifejezetten rendszámtáblák karaktereinek felismerésére lett optimalizálva.
+A YOLO által kivágott rendszámtábla kép bekerül a modell bemenetére, ahol először szürkeárnyalatosra konvertáljuk, kontrasztot javítunk, majd átméretezzük.
+A kimenet egy karakterlánc, amely a rendszám betűit és számjegyeit tartalmazza.
+Emellett egy bizonytalansági értéket is ad, ami jelzi, mennyire magabiztos a modell az adott predikcióban.
+
+>>> NEXT SLIDE >>>
+
+\section*{Mappás tesztelés}
+
+A fejlesztett rendszerrel képesek voltunk egy mappában lévő összes képet feldolgozni.
+A bal oldalon néhány példa látható, ahol sikeresen detektált rendszámtáblákat.
+A jobb oldali oszlopban pedig láthatjuk, hogy a rendszer egy .csv fájlban sorolja fel a felismert rendszámokat – ez már teljesen automatizált módon történik.
+
+>>> NEXT SLIDE >>>
+
+\section*{Webes felület}
+
+Készítettünk egy egyszerű webes alkalmazást is.
+A felhasználó képet tölthet fel, a rendszer felismeri a rendszámot, és visszaadja az eredményt.
+A frontend React, a backend FastAPI alapú.
+
+>>> LIVE DEMO >>>
+
+>>> NEXT SLIDE >>>
+
+\section*{Zárás}
+
+Összefoglalva: sikeresen építettünk egy rendszert, amely magyar rendszámtáblákat képes detektálni és felismerni.
+A YOLOv8 pontos detekciókat adott, az OCR modell pedig megbízható karakterfelismerést.
+A rendszer parancssoros és webes formában is működik.
+
+Köszönjük a figyelmet!
+
+\end{document}

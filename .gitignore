@@ -9,3 +9,9 @@ frontend/build
 
 backend/__pycache__
 backend/uploads
+
+presentation/build
+
+text/__pycache__
+test/images
+test/out
